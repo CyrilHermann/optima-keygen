@@ -1,11 +1,34 @@
+// netlify/functions/save-log.js
 const fs = require("fs");
 const path = require("path");
 
 exports.handler = async function(event) {
-  const data = JSON.parse(event.body);
-  const { login, reason, line, inputCode, generatedCode } = data;
-  const filePath = path.join(__dirname, "../../log.csv");
-  const entry = `\n${new Date().toISOString()},${login},${reason},${line},${inputCode},${generatedCode}`;
-  fs.appendFileSync(filePath, entry);
-  return { statusCode: 200, body: "OK" };
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
+  }
+
+  const { login, reason, line, inputCode, generatedCode } = JSON.parse(event.body);
+  const filePath = path.join(__dirname, "../../log.json");
+
+  let log = [];
+  if (fs.existsSync(filePath)) {
+    const content = fs.readFileSync(filePath, "utf8");
+    log = JSON.parse(content);
+  }
+
+  log.push({
+    timestamp: new Date().toISOString(),
+    login,
+    reason,
+    line,
+    inputCode,
+    generatedCode
+  });
+
+  fs.writeFileSync(filePath, JSON.stringify(log, null, 2));
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ message: "Log saved." })
+  };
 };
