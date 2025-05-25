@@ -1,7 +1,7 @@
 // netlify/functions/get-log.js
 const fetch = require("node-fetch");
 
-exports.handler = async function() {
+exports.handler = async function () {
   const token = process.env.AIRTABLE_TOKEN;
   const baseId = "appFcQRj7VbUyVJW3";
   const tableName = "logs";
@@ -24,14 +24,31 @@ exports.handler = async function() {
   const data = await response.json();
 
   const headers = ["timestamp", "login", "reason", "line", "inputCode", "generatedCode"];
-  const rows = data.records.map(r => headers.map(h => r.fields[h] || "").join(","));
+  const rows = data.records.map(record => {
+    const fields = record.fields;
+    const ts = fields.timestamp ? new Date(fields.timestamp).toLocaleString("fr-FR", {
+      dateStyle: "short",
+      timeStyle: "short",
+      timeZone: "Europe/Paris"
+    }) : "";
+
+    return [
+      ts,
+      fields.login || "",
+      fields.reason || "",
+      fields.line || "",
+      fields.inputCode || "",
+      fields.generatedCode || ""
+    ].join(",");
+  });
+
   const csv = [headers.join(","), ...rows].join("\n");
 
   return {
     statusCode: 200,
     headers: {
-      "Content-Type": "text/csv",
-      "Content-Disposition": "attachment; filename=log.csv"
+      "Content-Type": "application/vnd.ms-excel",
+      "Content-Disposition": "attachment; filename=log_optima.csv"
     },
     body: csv
   };
