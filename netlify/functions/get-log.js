@@ -1,4 +1,3 @@
-// netlify/functions/get-log.js
 const fs = require("fs");
 const path = require("path");
 
@@ -16,7 +15,7 @@ exports.handler = async function(event) {
   const headers = ["timestamp", "login", "reason", "line", "inputCode", "generatedCode"];
   const csv = [headers.join(",")].concat(
     logData.map(entry => headers.map(h => entry[h]).join(","))
-  ).join("\n");
+  ).join("\\n");
 
   return {
     statusCode: 200,
