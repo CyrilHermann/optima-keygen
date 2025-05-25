@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OPTIMA Key V2</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background-color: #e0e0e0;
+      padding: 2rem;
+      border-radius: 10px;
+      width: 50%;
+      height: 66%;
+      display: flex;
+      flex-direction: column;
+      justify-content: start;
+      align-items: center;
+    }
+    h1 {
+      font-family: Optima, sans-serif;
+      font-weight: bold;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      font-size: 1rem;
+      border-radius: 5px;
+    }
+    input {
+      width: 80%;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 50%;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>OPTIMA Key V2</h1>
+    <input type="text" id="login" placeholder="Login" />
+    <input type="password" id="password" placeholder="Mot de passe" />
+    <button onclick="login()">Connexion</button>
+    <div id="authFields" style="display:none;">
+      <input type="text" id="reason" placeholder="Raison de la demande" />
+      <input type="text" id="line" placeholder="Ligne de production" />
+      <input type="number" id="userCode" placeholder="Code à 6 chiffres" />
+      <button onclick="generate()">Générer le code</button>
+    </div>
+    <p id="result" style="color:green;font-weight:bold;"></p>
+  </div>
+
+  <script>
+    let currentLogin = "";
+
+    function login() {
+      const login = document.getElementById("login").value;
+      const password = document.getElementById("password").value;
+      fetch('login.csv')
+        .then(res => res.text())
+        .then(text => {
+          const lines = text.split('\n').slice(1);
+          const ok = lines.some(row => {
+            const [user, pass] = row.split(',');
+            return user === login && pass === password;
+          });
+          if (ok) {
+            currentLogin = login;
+            document.getElementById("authFields").style.display = "flex";
+          } else {
+            alert("Login ou mot de passe incorrect.");
+          }
+        });
+    }
+
+    function generate() {
+      const reason = document.getElementById("reason").value;
+      const line = document.getElementById("line").value;
+      const inputCode = parseInt(document.getElementById("userCode").value);
+      const generatedCode = computeCode(inputCode);
+      document.getElementById("result").textContent = "Code généré : " + generatedCode;
+
+      fetch('/.netlify/functions/save-log', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login: currentLogin, reason, line, inputCode, generatedCode })
+      });
+    }
+
+    function computeCode(input) {
+      let diCode2 = input - 82147;
+      let diCode1 = diCode2 + 345678;
+      diCode2 += 987654;
+      let diKey = 191160;
+      for (let i = 0; i < 6; i++) {
+        diKey ^= [10378468,9756798,11958733,9941455,3299378,126389,10410033,14299171,12396521,2170442,3392544,12579906,9106159,9555089,15305273,768224,15914241][diCode1 % 17];
+        diKey ^= [5741148,11035842,4420135,13056627,11694283,520152,14277664,4577628,7053676,13101311,12275109,15946162,2133221,2423934,8896713,4542915,176056,3255677,2449672][diCode2 % 19];
+        diCode1 = Math.floor(diCode1 / 17);
+        diCode2 = Math.floor(diCode2 / 19);
+      }
+      return 100000 + (diKey & 0x0fffffff) % 900000;
+    }
+  </script>
+</body>
+</html>

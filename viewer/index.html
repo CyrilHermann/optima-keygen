@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Téléchargement du log</title>
+</head>
+<body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f8f8;">
+  <div style="background:#e0e0e0;padding:2rem;border-radius:10px;text-align:center;">
+    <h2>🗂️ Télécharger le fichier log</h2>
+    <button onclick="downloadLog()" style="padding:10px 20px;background:#007BFF;color:white;border:none;border-radius:5px;">Télécharger</button>
+  </div>
+  <script>
+    function downloadLog() {
+      window.location.href = "/.netlify/functions/get-log";
+    }
+  </script>
+</body>
+</html>
