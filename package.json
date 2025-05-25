@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "commonjs",
   "dependencies": {
+    "exceljs": "^4.3.0",
     "node-fetch": "^2.6.7"
   }
 }
