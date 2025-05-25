@@ -1,5 +1,6 @@
 // netlify/functions/get-log.js
 const fetch = require("node-fetch");
+const { stringify } = require("csv-stringify/sync");
 
 exports.handler = async function () {
   const token = process.env.AIRTABLE_TOKEN;
@@ -24,7 +25,7 @@ exports.handler = async function () {
   const data = await response.json();
 
   const headers = ["timestamp", "login", "reason", "line", "inputCode", "generatedCode"];
-  const rows = data.records.map(record => {
+  const records = data.records.map(record => {
     const fields = record.fields;
     const ts = fields.timestamp ? new Date(fields.timestamp).toLocaleString("fr-FR", {
       dateStyle: "short",
@@ -32,24 +33,24 @@ exports.handler = async function () {
       timeZone: "Europe/Paris"
     }) : "";
 
-    return [
-      ts,
-      fields.login || "",
-      fields.reason || "",
-      fields.line || "",
-      fields.inputCode || "",
-      fields.generatedCode || ""
-    ].join(",");
+    return {
+      timestamp: ts,
+      login: fields.login || "",
+      reason: fields.reason || "",
+      line: fields.line || "",
+      inputCode: fields.inputCode || "",
+      generatedCode: fields.generatedCode || ""
+    };
   });
 
-  const csv = [headers.join(","), ...rows].join("\n");
+  const xlsxFormatted = stringify(records, { header: true, columns: headers, delimiter: "," });
 
   return {
     statusCode: 200,
     headers: {
-      "Content-Type": "application/vnd.ms-excel",
-      "Content-Disposition": "attachment; filename=log_optima.csv"
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": "attachment; filename=log_optima.xlsx"
     },
-    body: csv
+    body: xlsxFormatted
   };
 };
