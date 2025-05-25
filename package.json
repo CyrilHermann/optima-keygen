@@ -1,9 +1,9 @@
 {
-  "name": "optima-log-webapp",
+  "name": "optima-keygen",
   "version": "1.0.0",
   "type": "commonjs",
   "dependencies": {
-    "exceljs": "^4.3.0",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "exceljs": "^4.3.0"
   }
 }
