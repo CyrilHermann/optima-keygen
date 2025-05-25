@@ -1,21 +1,31 @@
-const fs = require("fs");
-const path = require("path");
+// netlify/functions/get-log.js
+const fetch = require("node-fetch");
 
-exports.handler = async function(event) {
-  const filePath = path.join(__dirname, "../../log.json");
+exports.handler = async function() {
+  const token = process.env.AIRTABLE_TOKEN;
+  const baseId = "appFcQRj7VbUyVJW3";
+  const tableName = "logs";
 
-  if (!fs.existsSync(filePath)) {
+  const airtableUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+
+  const response = await fetch(airtableUrl, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
     return {
-      statusCode: 404,
-      body: "Aucun fichier log disponible."
+      statusCode: response.status,
+      body: `Erreur lors de la lecture: ${await response.text()}`
     };
   }
 
-  const logData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const data = await response.json();
+
   const headers = ["timestamp", "login", "reason", "line", "inputCode", "generatedCode"];
-  const csv = [headers.join(",")].concat(
-    logData.map(entry => headers.map(h => entry[h]).join(","))
-  ).join("\\n");
+  const rows = data.records.map(r => headers.map(h => r.fields[h] || "").join(","));
+  const csv = [headers.join(","), ...rows].join("\n");
 
   return {
     statusCode: 200,
