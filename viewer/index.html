@@ -22,7 +22,7 @@
       width: 100%;
       max-width: 400px;
     }
-    input[type="password"] {
+    input[type="text"], input[type="password"] {
       width: 100%;
       padding: 0.5rem;
       margin-top: 0.5rem;
@@ -49,19 +49,46 @@
 <body>
   <div class="container">
     <h2>🔒 Téléchargement des logs</h2>
-    <label for="admin-password">Mot de passe admin :</label>
+    <label for="admin-login">Login admin :</label>
+    <input type="text" id="admin-login" placeholder="Entrez le login">
+    <label for="admin-password">Mot de passe :</label>
     <input type="password" id="admin-password" placeholder="Entrez le mot de passe">
     <button id="downloadBtn" disabled>Télécharger</button>
   </div>
 
   <script>
-    const PASSWORD = "optimaadmin";
-    document.getElementById("admin-password").addEventListener("input", (e) => {
-      const downloadBtn = document.getElementById("downloadBtn");
-      downloadBtn.disabled = e.target.value !== PASSWORD;
-    });
+    async function checkAdminLogin(login, password) {
+      const response = await fetch("/login.csv");
+      const text = await response.text();
+      const lines = text.trim().split("\n");
+      for (let i = 1; i < lines.length; i++) {
+        const [csvLogin, csvPassword, role] = lines[i].split(",");
+        if (
+          csvLogin.trim().toLowerCase() === login &&
+          csvPassword.trim() === password &&
+          (role && role.trim().toLowerCase() === "admin")
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
 
-    document.getElementById("downloadBtn").addEventListener("click", () => {
+    const loginField = document.getElementById("admin-login");
+    const passField = document.getElementById("admin-password");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    async function validateAccess() {
+      const login = loginField.value.trim().toLowerCase();
+      const pass = passField.value.trim();
+      const isValid = await checkAdminLogin(login, pass);
+      downloadBtn.disabled = !isValid;
+    }
+
+    loginField.addEventListener("input", validateAccess);
+    passField.addEventListener("input", validateAccess);
+
+    downloadBtn.addEventListener("click", () => {
       window.location.href = "/.netlify/functions/get-log";
     });
   </script>
