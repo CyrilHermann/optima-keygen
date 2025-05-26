@@ -68,7 +68,7 @@
     <div id="result"></div>
   </div>
 
-  <script type="module">
+  <script>
     async function checkLoginCSV(login, password) {
       const res = await fetch("/.netlify/functions/check-login", {
         method: "POST",
