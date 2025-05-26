@@ -1,0 +1,41 @@
+
+const fs = require("fs");
+const path = require("path");
+
+exports.handler = async function (event) {
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      body: "Method Not Allowed"
+    };
+  }
+
+  const { login, password } = JSON.parse(event.body);
+  const filePath = path.join(__dirname, "..", "..", "login.csv");
+
+  try {
+    const data = fs.readFileSync(filePath, "utf8");
+    const lines = data.trim().split("\n");
+    for (let i = 1; i < lines.length; i++) {
+      const [storedLogin, storedPassword] = lines[i].split(",");
+      if (
+        storedLogin.trim().toLowerCase() === login.trim().toLowerCase() &&
+        storedPassword.trim() === password.trim()
+      ) {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ success: true })
+        };
+      }
+    }
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: "Unauthorized" })
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Server Error", detail: err.message })
+    };
+  }
+};
