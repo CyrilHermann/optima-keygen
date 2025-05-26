@@ -57,6 +57,7 @@
     <form class="form-group">
       <input type="text" id="login" placeholder="Login">
       <input type="password" id="password" placeholder="Mot de passe">
+      <button type="button" onclick="checkCredentials()">Se connecter</button>
       <div id="secured-section" class="hidden">
         <input type="text" id="reason" placeholder="Raison">
         <input type="text" id="lineNumber" placeholder="Ligne de production">
@@ -77,9 +78,6 @@
       return res.ok;
     }
 
-    document.getElementById('login').addEventListener('input', checkCredentials);
-    document.getElementById('password').addEventListener('input', checkCredentials);
-
     async function checkCredentials() {
       const login = document.getElementById('login').value.trim().toLowerCase();
       const pass = document.getElementById('password').value.trim();
@@ -87,6 +85,7 @@
       const valid = await checkLoginCSV(login, pass);
       console.log("Login valide ?", valid);
       section.classList.toggle('hidden', !valid);
+      if (!valid) alert("Identifiants incorrects");
     }
 
     async function requestCode() {
