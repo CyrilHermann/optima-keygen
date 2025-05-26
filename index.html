@@ -46,22 +46,55 @@
       cursor: pointer;
       width: 100%;
     }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="wrapper">
     <h1><strong>OPTIMA Key V2</strong></h1>
     <form class="form-group">
-      <input type="text" id="reason" placeholder="Raison">
-      <input type="text" id="lineNumber" placeholder="Ligne de production">
-      <input type="text" id="inputCode" placeholder="Code à 6 chiffres">
-      <button type="button" onclick="generateCode()">Générer le code</button>
+      <input type="text" id="login" placeholder="Login">
+      <input type="password" id="password" placeholder="Mot de passe">
+      <div id="secured-section" class="hidden">
+        <input type="text" id="reason" placeholder="Raison">
+        <input type="text" id="lineNumber" placeholder="Ligne de production">
+        <input type="text" id="inputCode" placeholder="Code à 6 chiffres">
+        <button type="button" onclick="generateCode()">Générer le code</button>
+      </div>
     </form>
     <div id="result"></div>
   </div>
 
   <script>
+    async function checkLoginCSV(login, password) {
+      const response = await fetch("/login.csv");
+      const text = await response.text();
+      const lines = text.trim().split("\n");
+      for (let i = 1; i < lines.length; i++) {
+        const [csvLogin, csvPassword] = lines[i].split(",");
+        if (csvLogin.trim().toLowerCase() === login && csvPassword.trim() === password) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    document.getElementById('login').addEventListener('input', checkCredentials);
+    document.getElementById('password').addEventListener('input', checkCredentials);
+
+    async function checkCredentials() {
+      const login = document.getElementById('login').value.trim().toLowerCase();
+      const pass = document.getElementById('password').value.trim();
+      const section = document.getElementById('secured-section');
+
+      const valid = await checkLoginCSV(login, pass);
+      section.classList.toggle('hidden', !valid);
+    }
+
     function generateCode() {
+      const login = document.getElementById('login').value.trim().toLowerCase();
       const reason = document.getElementById('reason').value;
       const line = document.getElementById('lineNumber').value;
       const code = document.getElementById('inputCode').value;
@@ -71,11 +104,25 @@
         return;
       }
 
-      // Simulation côté client
       const generated = Math.floor(Math.random() * 900000) + 100000;
       document.getElementById("result").innerHTML = `🔐 Code généré : <strong>${generated}</strong>`;
 
-      // Ici, tu peux appeler save-log.js si tu veux logguer vers Airtable
+      fetch("/.netlify/functions/save-log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          login,
+          reason,
+          line,
+          inputCode: code,
+          generatedCode: generated
+        })
+      })
+      .then(res => res.json())
+      .then(data => console.log("Log sauvegardé:", data))
+      .catch(err => console.error("Erreur lors de l'envoi au log:", err));
     }
   </script>
 </body>
