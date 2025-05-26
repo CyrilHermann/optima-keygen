@@ -10,7 +10,7 @@ exports.handler = async function (event) {
     };
   }
 
-  const { login, password } = JSON.parse(event.body);
+  const path = require("path");
   const filePath = path.join(__dirname, "..", "..", "login.csv");
 
   try {
