@@ -1,4 +1,4 @@
-
+// netlify/functions/check-login.js
 const fs = require("fs");
 const path = require("path");
 
@@ -10,17 +10,24 @@ exports.handler = async function (event) {
     };
   }
 
-  const path = require("path");
+  const { login, password } = JSON.parse(event.body);
   const filePath = path.join(__dirname, "..", "..", "login.csv");
 
   try {
+    if (!fs.existsSync(filePath)) {
+      return {
+        statusCode: 404,
+        body: "login.csv file not found"
+      };
+    }
+
     const data = fs.readFileSync(filePath, "utf8");
     const lines = data.trim().split("\n");
     for (let i = 1; i < lines.length; i++) {
-      const [storedLogin, storedPassword] = lines[i].split(",");
+      const [csvLogin, csvPassword] = lines[i].split(",");
       if (
-        storedLogin.trim().toLowerCase() === login.trim().toLowerCase() &&
-        storedPassword.trim() === password.trim()
+        csvLogin.trim().toLowerCase() === login.trim().toLowerCase() &&
+        csvPassword.trim() === password.trim()
       ) {
         return {
           statusCode: 200,
@@ -28,6 +35,7 @@ exports.handler = async function (event) {
         };
       }
     }
+
     return {
       statusCode: 401,
       body: JSON.stringify({ error: "Unauthorized" })
