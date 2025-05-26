@@ -33,6 +33,7 @@ exports.handler = async function (event) {
       body: JSON.stringify({ error: "Unauthorized" })
     };
   } catch (err) {
+    console.error("Erreur lecture login.csv :", err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Server Error", detail: err.message })
