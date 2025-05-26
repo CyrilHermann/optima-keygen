@@ -1,4 +1,3 @@
-// netlify/functions/save-log.js
 const fetch = require("node-fetch");
 
 exports.handler = async function(event) {
@@ -10,9 +9,30 @@ exports.handler = async function(event) {
   const baseId = "appFcQRj7VbUyVJW3";
   const tableName = "logs";
 
-  const { login, reason, line, inputCode, generatedCode } = JSON.parse(event.body);
+  let payload;
+  try {
+    payload = JSON.parse(event.body);
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: "Invalid JSON format"
+    };
+  }
+
+  const { login, reason, line, inputCode, generatedCode } = payload;
 
   const airtableUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+
+  const body = {
+    fields: {
+      timestamp: new Date().toISOString(),
+      login: String(login || ""),
+      reason: String(reason || ""),
+      line: String(line || ""),
+      inputCode: Number(inputCode),
+      generatedCode: Number(generatedCode)
+    }
+  };
 
   const response = await fetch(airtableUrl, {
     method: "POST",
@@ -20,22 +40,15 @@ exports.handler = async function(event) {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      fields: {
-        timestamp: new Date().toISOString(),
-        login,
-        reason,
-        line,
-        inputCode,
-        generatedCode
-      }
-    })
+    body: JSON.stringify(body)
   });
+
+  const responseText = await response.text();
 
   if (!response.ok) {
     return {
       statusCode: response.status,
-      body: `Erreur lors de l'enregistrement: ${await response.text()}`
+      body: `Erreur Airtable: ${responseText}`
     };
   }
 
