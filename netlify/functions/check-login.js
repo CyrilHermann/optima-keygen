@@ -11,7 +11,7 @@ exports.handler = async function (event) {
   }
 
   const { login, password } = JSON.parse(event.body);
-  const filePath = path.join(__dirname, "..", "..", "login.csv");
+  const filePath = path.join(__dirname, "login.csv");
 
   try {
     if (!fs.existsSync(filePath)) {
