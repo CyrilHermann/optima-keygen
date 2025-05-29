@@ -1,30 +1,47 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
 exports.handler = async function(event) {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   const { login, password } = JSON.parse(event.body);
-  const filePath = path.join(__dirname, "login.csv");
 
-  if (!fs.existsSync(filePath)) {
-    return { statusCode: 500, body: "login.csv file not found" };
-  }
+  try {
+    const filePath = path.join(__dirname, '..', '..', 'login.csv');
+    const fileContent = fs.readFileSync(filePath, 'utf8');
 
-  const content = fs.readFileSync(filePath, "utf-8");
-  const lines = content.trim().split("\n").slice(1);
+    const rows = fileContent.trim().split('\n').map(row => row.split(','));
+    const headers = rows[0];
+    const users = rows.slice(1);
 
-  for (const line of lines) {
-    const [storedLogin, storedPassword, role] = line.split(",");
-    if (storedLogin === login && storedPassword === password) {
+    const loginIndex = headers.indexOf('login');
+    const passIndex = headers.indexOf('password');
+    const roleIndex = headers.indexOf('role');
+
+    const user = users.find(row =>
+      row[loginIndex].trim().toLowerCase() === login.toLowerCase() &&
+      row[passIndex].trim() === password
+    );
+
+    if (user) {
+      const role = user[roleIndex];
       return {
         statusCode: 200,
         body: JSON.stringify({ valid: true, role })
       };
+    } else {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ valid: false })
+      };
     }
+  } catch (err) {
+    console.error("Erreur lecture login.csv :", err);
+    return {
+      statusCode: 500,
+      body: "Erreur serveur lors de la lecture du fichier login"
+    };
   }
-
-  return { statusCode: 200, body: JSON.stringify({ valid: false }) };
 };
