@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OPTIMA Key V2</title>
+  <style>
+    body {
+      background-color: #f0f0f0;
+      font-family: sans-serif;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .wrapper {
+      background: #e0e0e0;
+      padding: 2rem;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 500px;
+    }
+    h1 {
+      font-family: Optima, sans-serif;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    input[type="text"], input[type="password"] {
+      padding: 0.8rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 0.8rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1><strong>OPTIMA Key V2</strong></h1>
+    <form class="form-group">
+      <input type="text" id="login" placeholder="Login" />
+      <input type="password" id="password" placeholder="Mot de passe" />
+      <button type="button" onclick="checkCredentials()">Se connecter</button>
+      <div id="secured-section" class="hidden">
+        <input type="text" id="reason" placeholder="Raison" />
+        <input type="text" id="lineNumber" placeholder="Ligne de production" />
+        <input type="text" id="inputCode" placeholder="Code à 6 chiffres" />
+        <button type="button" onclick="requestCode()">Générer le code</button>
+      </div>
+    </form>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function checkLoginCSV(login, password) {
+      const res = await fetch("/.netlify/functions/check-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login, password })
+      });
+      const data = await res.json();
+      return data.valid;
+    }
+
+    async function checkCredentials() {
+      const login = document.getElementById('login').value.trim().toLowerCase();
+      const pass = document.getElementById('password').value.trim();
+      const section = document.getElementById('secured-section');
+      const valid = await checkLoginCSV(login, pass);
+      section.classList.toggle('hidden', !valid);
+      if (!valid) alert("Identifiants incorrects");
+    }
+
+    async function requestCode() {
+      const login = document.getElementById('login').value.trim().toLowerCase();
+      const reason = document.getElementById('reason').value;
+      const line = document.getElementById('lineNumber').value;
+      const inputCode = parseInt(document.getElementById('inputCode').value);
+
+      if (!reason || !line || isNaN(inputCode)) {
+        alert("Veuillez remplir tous les champs correctement");
+        return;
+      }
+
+      const res = await fetch("/.netlify/functions/generate-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inputCode })
+      });
+      const data = await res.json();
+
+      const generatedCode = data.generatedCode;
+      document.getElementById("result").innerHTML = `🔐 Code généré : <strong>${generatedCode}</strong>`;
+
+      fetch("/.netlify/functions/save-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          login,
+          reason,
+          line,
+          inputCode,
+          generatedCode
+        })
+      });
+    }
+  </script>
+</body>
+</html>
