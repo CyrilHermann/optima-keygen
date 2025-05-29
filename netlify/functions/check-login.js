@@ -3,10 +3,21 @@ const path = require('path');
 
 exports.handler = async function(event) {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' })
+    };
   }
 
-  const { login, password } = JSON.parse(event.body);
+  let login, password;
+  try {
+    ({ login, password } = JSON.parse(event.body));
+  } catch (e) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Requête invalide (JSON)' })
+    };
+  }
 
   try {
     const filePath = path.join(__dirname, '..', '..', 'login.csv');
@@ -37,11 +48,12 @@ exports.handler = async function(event) {
         body: JSON.stringify({ valid: false })
       };
     }
+
   } catch (err) {
     console.error("Erreur lecture login.csv :", err);
     return {
       statusCode: 500,
-      body: "Erreur serveur lors de la lecture du fichier login"
+      body: JSON.stringify({ error: "Erreur serveur : impossible de lire login.csv" })
     };
   }
 };
