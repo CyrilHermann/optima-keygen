@@ -64,24 +64,36 @@
 
   <script>
     async function verifyAdmin() {
-      const login = document.getElementById("login").value.trim().toLowerCase();
-      const password = document.getElementById("password").value.trim();
+  const login = document.getElementById("login").value.trim().toLowerCase();
+  const password = document.getElementById("password").value.trim();
 
-      const res = await fetch("/.netlify/functions/check-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ login, password })
-      });
+  try {
+    const res = await fetch("/.netlify/functions/check-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ login, password })
+    });
 
-      const data = await res.json();
-      const downloadSection = document.getElementById("download-section");
-      if (data.valid && data.role === "admin") {
-        downloadSection.classList.remove("hidden");
-        document.getElementById("status").innerText = "";
-      } else {
-        document.getElementById("status").innerText = "Accès refusé : identifiants ou rôle incorrect";
-      }
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      alert("Erreur de réponse du serveur");
+      return;
     }
+
+    if (data.valid && data.role === "admin") {
+      document.getElementById("download-section").classList.remove("hidden");
+      document.getElementById("status").innerText = "";
+    } else {
+      alert("Accès refusé : identifiants ou rôle insuffisant");
+    }
+
+  } catch (error) {
+    alert("Erreur de connexion au serveur");
+    console.error(error);
+  }
+}
 
     function downloadLog() {
       window.location.href = "/.netlify/functions/get-log";
