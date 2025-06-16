@@ -1,67 +1,24 @@
-const fetch = require("node-fetch");
+const fs = require("fs");
+const path = require("path");
 
-exports.handler = async function (event) {
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: "Méthode non autorisée" })
-    };
-  }
-
-  const token = process.env.AIRTABLE_TOKEN;
-  const baseId = "appFcQRj7VbUyVJW3";
-  const tableName = "logs";
-
-  let payload;
+exports.handler = async function () {
   try {
-    payload = JSON.parse(event.body);
-  } catch (err) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Requête JSON invalide" })
-    };
-  }
-
-  const { login, reason, line, inputCode, generatedCode } = payload;
-
-  const airtableUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
-
-  try {
-    const response = await fetch(airtableUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        fields: {
-          timestamp: new Date().toISOString(),
-          login,
-          reason,
-          line,
-          inputCode,
-          generatedCode
-        }
-      })
-    });
-
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: `Erreur Airtable: ${responseText}` })
-      };
-    }
+    const filePath = path.join(__dirname, "..", "..", "log.xlsx");
+    const fileBuffer = fs.readFileSync(filePath);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "✅ Données enregistrées dans Airtable" })
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": "attachment; filename=log.xlsx"
+      },
+      body: fileBuffer.toString("base64"),
+      isBase64Encoded: true
     };
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: `Erreur serveur: ${err.message}` })
+      body: JSON.stringify({ error: "Impossible de lire le fichier log." })
     };
   }
 };
