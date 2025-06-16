@@ -17,20 +17,37 @@ exports.handler = async function () {
       }
     );
 
-    const { records } = await airtableResponse.json();
+    const data = await airtableResponse.json();
+    const records = data.records || [];
 
     const workbook = new ExcelJS.Workbook();
+    workbook.creator = "Optima App";
+    workbook.created = new Date();
     const sheet = workbook.addWorksheet("Logs");
 
-    const columns = ["timestamp", "login", "reason", "line", "inputCode", "generatedCode"];
-    sheet.addRow(columns);
+    const headers = [
+      { header: "Horodatage", key: "timestamp", width: 25 },
+      { header: "Login", key: "login", width: 20 },
+      { header: "Raison", key: "reason", width: 30 },
+      { header: "Ligne", key: "line", width: 15 },
+      { header: "Code Entré", key: "inputCode", width: 15 },
+      { header: "Code Généré", key: "generatedCode", width: 15 }
+    ];
+
+    sheet.columns = headers;
 
     records.forEach(record => {
-      const row = columns.map(col => record.fields[col] || "");
-      sheet.addRow(row);
+      const fields = record.fields || {};
+      sheet.addRow({
+        timestamp: fields.timestamp || "",
+        login: fields.login || "",
+        reason: fields.reason || "",
+        line: fields.line || "",
+        inputCode: fields.inputCode || "",
+        generatedCode: fields.generatedCode || ""
+      });
     });
 
-    // ⚠️ IMPORTANT : créer un Buffer correctement encodé
     const buffer = await workbook.xlsx.writeBuffer();
 
     return {
