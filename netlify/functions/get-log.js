@@ -20,23 +20,21 @@ exports.handler = async function () {
       throw new Error("Réponse invalide d'Airtable");
     }
 
-    // Création d’un fichier Excel
+    // Crée un fichier Excel
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Logs");
 
-    // En-têtes
     const headers = ["timestamp", "login", "reason", "line", "inputCode", "generatedCode"];
     sheet.addRow(headers);
 
-    // Remplir avec les enregistrements
     data.records.forEach(record => {
-      const fields = record.fields;
-      const row = headers.map(h => fields[h] || "");
+      const row = headers.map(h => record.fields[h] || "");
       sheet.addRow(row);
     });
 
-    // Générer le fichier Excel en mémoire
+    // Buffer binaire à encoder en base64
     const buffer = await workbook.xlsx.writeBuffer();
+    const base64 = buffer.toString("base64");
 
     return {
       statusCode: 200,
@@ -44,9 +42,10 @@ exports.handler = async function () {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": "attachment; filename=log.xlsx"
       },
-      body: buffer.toString("base64"),
+      body: base64,
       isBase64Encoded: true
     };
+
   } catch (err) {
     return {
       statusCode: 500,
