@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -50,7 +50,7 @@
       display: none !important;
     }
     input.error {
-    border: 2px solid red !important;
+      border: 2px solid red !important;
     }
   </style>
 </head>
@@ -83,71 +83,85 @@
     }
 
     async function checkCredentials() {
-      const login = document.getElementById('login').value.trim().toLowerCase();
-      const pass = document.getElementById('password').value.trim();
+      const loginInput = document.getElementById('login');
+      const passwordInput = document.getElementById('password');
       const section = document.getElementById('secured-section');
+
+      const login = loginInput.value.trim().toLowerCase();
+      const pass = passwordInput.value.trim();
+
+      loginInput.classList.remove('error');
+      passwordInput.classList.remove('error');
+
       const valid = await checkLoginCSV(login, pass);
-      section.classList.toggle('hidden', !valid);
-      if (!valid) alert("Identifiants incorrects");
+
+      if (valid) {
+        section.classList.remove('hidden');
+      } else {
+        loginInput.classList.add('error');
+        passwordInput.classList.add('error');
+        section.classList.add('hidden');
+        alert("Identifiants incorrects");
+      }
     }
 
     async function requestCode() {
-  const login = document.getElementById('login').value.trim().toLowerCase();
-  const reasonEl = document.getElementById('reason');
-  const lineEl = document.getElementById('lineNumber');
-  const inputCodeEl = document.getElementById('inputCode');
+      const login = document.getElementById('login').value.trim().toLowerCase();
+      const reasonEl = document.getElementById('reason');
+      const lineEl = document.getElementById('lineNumber');
+      const inputCodeEl = document.getElementById('inputCode');
 
-  const reason = reasonEl.value.trim();
-  const line = lineEl.value.trim();
-  const inputCodeStr = inputCodeEl.value.trim(); // 🔄 D'abord on récupère la valeur texte
-  const inputCode = parseInt(inputCodeStr);      // 🔄 Ensuite on peut la convertir en nombre
+      const reason = reasonEl.value.trim();
+      const line = lineEl.value.trim();
+      const inputCodeStr = inputCodeEl.value.trim();
+      const inputCode = parseInt(inputCodeStr);
 
-  // Réinitialise les erreurs visuelles
-  [reasonEl, lineEl, inputCodeEl].forEach(el => el.classList.remove('error'));
+      [reasonEl, lineEl, inputCodeEl].forEach(el => el.classList.remove('error'));
 
-  let hasError = false;
-  if (!reason) {
-    reasonEl.classList.add('error');
-    hasError = true;
-  }
-  if (!/^(MV|MP)\d{2}$/.test(line)) {
-  lineEl.classList.add('error');
-  hasError = true;
-  alert("Pour la ligne de production, veuillez renseigner un format valide comme MV01 ou MP07 (deux lettres et deux chiffres). Merci.");
-  }
+      let hasError = false;
+      if (!reason) {
+        reasonEl.classList.add('error');
+        hasError = true;
+      }
 
-  if (!/^\d{6}$/.test(inputCodeStr)) {
-    inputCodeEl.classList.add('error');
-    hasError = true;
-  }
+      if (!/^(MV|MP)\d{2}$/.test(line)) {
+        lineEl.classList.add('error');
+        hasError = true;
+        alert("Pour la ligne de production, veuillez renseigner un format valide comme MV01 ou MP07 (deux lettres et deux chiffres). Merci.");
+      }
 
-  if (hasError) {
-    alert("Veuillez remplir tous les champs correctement");
-    return;
-  }
+      if (!/^\d{6}$/.test(inputCodeStr)) {
+        inputCodeEl.classList.add('error');
+        hasError = true;
+      }
 
-  const res = await fetch("/.netlify/functions/generate-code", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ inputCode })
-  });
-  const data = await res.json();
+      if (hasError) {
+        alert("Veuillez remplir tous les champs correctement");
+        return;
+      }
 
-  const generatedCode = data.generatedCode;
-  document.getElementById("result").innerHTML = `🔐 Code généré : <strong>${generatedCode}</strong>`;
+      const res = await fetch("/.netlify/functions/generate-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inputCode })
+      });
+      const data = await res.json();
 
-  fetch("/.netlify/functions/save-log", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      login,
-      reason,
-      line,
-      inputCode,
-      generatedCode
-    })
-  });
-}
+      const generatedCode = data.generatedCode;
+      document.getElementById("result").innerHTML = `🔐 Code généré : <strong>${generatedCode}</strong>`;
+
+      fetch("/.netlify/functions/save-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          login,
+          reason,
+          line,
+          inputCode,
+          generatedCode
+        })
+      });
+    }
   </script>
 </body>
 </html>
