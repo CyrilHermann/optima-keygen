@@ -1,6 +1,17 @@
 const fetch = require("node-fetch");
 const ExcelJS = require("exceljs");
 
+function formatTimestamp(raw) {
+  if (!raw) return "";
+  const d = new Date(raw);
+  return d.toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
 exports.handler = async function () {
   const token = process.env.AIRTABLE_TOKEN;
   const baseId = "appFcQRj7VbUyVJW3";
@@ -41,7 +52,7 @@ exports.handler = async function () {
     airtableData.records.forEach(record => {
       const fields = record.fields;
       sheet.addRow({
-        timestamp: fields.timestamp || "",
+        timestamp: formatTimestamp(fields.timestamp),
         login: fields.login || "",
         reason: fields.reason || "",
         line: fields.line || "",
