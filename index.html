@@ -93,16 +93,37 @@
     }
 
     async function requestCode() {
-      const login = document.getElementById('login').value.trim().toLowerCase();
-      const reason = document.getElementById('reason').value;
-      const line = document.getElementById('lineNumber').value;
-      const inputCode = parseInt(document.getElementById('inputCode').value);
+  const login = document.getElementById('login').value.trim().toLowerCase();
+  const reasonEl = document.getElementById('reason');
+  const lineEl = document.getElementById('lineNumber');
+  const inputCodeEl = document.getElementById('inputCode');
 
-      if (!reason || !line || isNaN(inputCode)) {
-        alert("Veuillez remplir tous les champs correctement");
-        return;
-      }
+  const reason = reasonEl.value.trim();
+  const line = lineEl.value.trim();
+  const inputCode = parseInt(inputCodeEl.value);
 
+  // Réinitialise les erreurs visuelles
+  [reasonEl, lineEl, inputCodeEl].forEach(el => el.classList.remove('error'));
+
+  let hasError = false;
+  if (!reason) {
+    reasonEl.classList.add('error');
+    hasError = true;
+  }
+  if (!line) {
+    lineEl.classList.add('error');
+    hasError = true;
+  }
+  if (isNaN(inputCode)) {
+    inputCodeEl.classList.add('error');
+    hasError = true;
+  }
+
+  if (hasError) {
+    alert("Veuillez remplir tous les champs correctement");
+    return;
+  }
+}
       const res = await fetch("/.netlify/functions/generate-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
