@@ -99,7 +99,8 @@
 
   const reason = reasonEl.value.trim();
   const line = lineEl.value.trim();
-  const inputCode = parseInt(inputCodeEl.value);
+  const inputCodeStr = inputCodeEl.value.trim(); // 🔄 D'abord on récupère la valeur texte
+  const inputCode = parseInt(inputCodeStr);      // 🔄 Ensuite on peut la convertir en nombre
 
   // Réinitialise les erreurs visuelles
   [reasonEl, lineEl, inputCodeEl].forEach(el => el.classList.remove('error'));
@@ -113,38 +114,38 @@
     lineEl.classList.add('error');
     hasError = true;
   }
-  if (isNaN(inputCode)) {
-  inputCodeEl.classList.add('error');
-  hasError = true;
+  if (!/^\d{6}$/.test(inputCodeStr)) {
+    inputCodeEl.classList.add('error');
+    hasError = true;
   }
-
 
   if (hasError) {
     alert("Veuillez remplir tous les champs correctement");
     return;
   }
-      const res = await fetch("/.netlify/functions/generate-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputCode })
-      });
-      const data = await res.json();
 
-      const generatedCode = data.generatedCode;
-      document.getElementById("result").innerHTML = `🔐 Code généré : <strong>${generatedCode}</strong>`;
+  const res = await fetch("/.netlify/functions/generate-code", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ inputCode })
+  });
+  const data = await res.json();
 
-      fetch("/.netlify/functions/save-log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          login,
-          reason,
-          line,
-          inputCode,
-          generatedCode
-        })
-      });
-    }
+  const generatedCode = data.generatedCode;
+  document.getElementById("result").innerHTML = `🔐 Code généré : <strong>${generatedCode}</strong>`;
+
+  fetch("/.netlify/functions/save-log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      login,
+      reason,
+      line,
+      inputCode,
+      generatedCode
+    })
+  });
+}
   </script>
 </body>
 </html>
