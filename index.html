@@ -99,7 +99,7 @@
 
   const reason = reasonEl.value.trim();
   const line = lineEl.value.trim();
-  const inputCode = parseInt(inputCodeEl.value);
+  const inputCode = parseInt(inputCodeStr);
 
   // Réinitialise les erreurs visuelles
   [reasonEl, lineEl, inputCodeEl].forEach(el => el.classList.remove('error'));
@@ -113,9 +113,11 @@
     lineEl.classList.add('error');
     hasError = true;
   }
-  if (isNaN(inputCode)) {
-    inputCodeEl.classList.add('error');
-    hasError = true;
+  const inputCodeStr = inputCodeEl.value.trim();
+      
+  if (!/^\d{6}$/.test(inputCodeStr)) {
+  inputCodeEl.classList.add('error');
+  hasError = true;
   }
 
   if (hasError) {
