@@ -47,7 +47,12 @@ exports.handler = async function () {
       { header: "Input Code", key: "inputCode", width: 15 },
       { header: "Generated Code", key: "generatedCode", width: 18 }
     ];
-
+    airtableData.records.sort((a, b) => {
+      const dateA = new Date(a.fields.timestamp || 0);
+      const dateB = new Date(b.fields.timestamp || 0);
+      return dateB - dateA; 
+      // tri du plus récent au plus ancien
+    });
     // Lignes
     airtableData.records.forEach(record => {
       const fields = record.fields;
