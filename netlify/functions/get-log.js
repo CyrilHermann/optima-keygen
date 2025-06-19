@@ -6,38 +6,40 @@ exports.handler = async function () {
   const baseId = "appFcQRj7VbUyVJW3";
   const tableName = "logs";
 
-  try {
-    const airtableResponse = await fetch(
-      `https://api.airtable.com/v0/${baseId}/${tableName}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
+  const url = `https://api.airtable.com/v0/${baseId}/${tableName}?pageSize=100`;
 
-    const data = await airtableResponse.json();
-    const records = data.records || [];
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json"
+  };
+
+  try {
+    const res = await fetch(url, { headers });
+    const airtableData = await res.json();
+
+    if (!res.ok) {
+      return {
+        statusCode: res.status,
+        body: JSON.stringify({ error: airtableData })
+      };
+    }
 
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = "Optima App";
-    workbook.created = new Date();
     const sheet = workbook.addWorksheet("Logs");
 
-    const headers = [
-      { header: "Horodatage", key: "timestamp", width: 25 },
+    // En-têtes
+    sheet.columns = [
+      { header: "Timestamp", key: "timestamp", width: 22 },
       { header: "Login", key: "login", width: 20 },
-      { header: "Raison", key: "reason", width: 30 },
-      { header: "Ligne", key: "line", width: 15 },
-      { header: "Code Entré", key: "inputCode", width: 15 },
-      { header: "Code Généré", key: "generatedCode", width: 15 }
+      { header: "Reason", key: "reason", width: 30 },
+      { header: "Line", key: "line", width: 15 },
+      { header: "Input Code", key: "inputCode", width: 15 },
+      { header: "Generated Code", key: "generatedCode", width: 18 }
     ];
 
-    sheet.columns = headers;
-
-    records.forEach(record => {
-      const fields = record.fields || {};
+    // Lignes
+    airtableData.records.forEach(record => {
+      const fields = record.fields;
       sheet.addRow({
         timestamp: fields.timestamp || "",
         login: fields.login || "",
@@ -53,7 +55,8 @@ exports.handler = async function () {
     return {
       statusCode: 200,
       headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": "attachment; filename=log.xlsx"
       },
       body: buffer.toString("base64"),
@@ -62,7 +65,7 @@ exports.handler = async function () {
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({ error: "Erreur serveur", details: err.message })
     };
   }
 };
