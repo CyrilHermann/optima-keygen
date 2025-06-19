@@ -110,10 +110,12 @@
     reasonEl.classList.add('error');
     hasError = true;
   }
-  if (!line) {
-    lineEl.classList.add('error');
-    hasError = true;
+  if (!/^(MV|MP)\d{2}$/.test(line)) {
+  lineEl.classList.add('error');
+  hasError = true;
+  alert("Pour la ligne de production, veuillez renseigner un format valide comme MV01 ou MP07 (deux lettres et deux chiffres). Merci.");
   }
+
   if (!/^\d{6}$/.test(inputCodeStr)) {
     inputCodeEl.classList.add('error');
     hasError = true;
