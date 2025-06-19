@@ -122,7 +122,6 @@
     alert("Veuillez remplir tous les champs correctement");
     return;
   }
-}
       const res = await fetch("/.netlify/functions/generate-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
