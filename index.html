@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -79,7 +79,7 @@
         body: JSON.stringify({ login, password })
       });
       const data = await res.json();
-      return data.valid;
+      return data; // attend un objet { valid: true/false, reason: "not-found"/"wrong-password" }
     }
 
     async function checkCredentials() {
@@ -90,18 +90,26 @@
       const login = loginInput.value.trim().toLowerCase();
       const pass = passwordInput.value.trim();
 
+      // Reset previous errors
       loginInput.classList.remove('error');
       passwordInput.classList.remove('error');
 
-      const valid = await checkLoginCSV(login, pass);
+      const result = await checkLoginCSV(login, pass);
 
-      if (valid) {
+      if (result.valid) {
         section.classList.remove('hidden');
       } else {
-        loginInput.classList.add('error');
-        passwordInput.classList.add('error');
         section.classList.add('hidden');
-        alert("Identifiants incorrects");
+
+        if (result.reason === "not-found") {
+          loginInput.classList.add('error');
+          alert("Soit vous avez fait une erreur lors de l'insertion de votre identifiant ou vous n'avez pas d'identifiant pour générer un code 5.\nVeuillez contacter votre TL ou le spécialiste Technologie pour en faire la demande.");
+        } else if (result.reason === "wrong-password") {
+          passwordInput.classList.add('error');
+          alert("Mot de passe incorrect.");
+        } else {
+          alert("Erreur de connexion.");
+        }
       }
     }
 
@@ -127,7 +135,7 @@
       if (!/^(MV|MP)\d{2}$/.test(line)) {
         lineEl.classList.add('error');
         hasError = true;
-        alert("Pour la ligne de production, veuillez renseigner un format valide comme MV01 ou MP07 (deux lettres en MAJ et deux chiffres). Merci.");
+        alert("Pour la ligne de production, veuillez renseigner un format valide comme MV01 ou MP07 (deux lettres et deux chiffres). Merci.");
       }
 
       if (!/^\d{6}$/.test(inputCodeStr)) {
