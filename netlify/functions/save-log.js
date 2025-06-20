@@ -22,7 +22,8 @@ exports.handler = async function (event) {
     };
   }
 
-  const { login, reason, line, inputCode, generatedCode } = payload;
+  let { login, reason, line, inputCode, generatedCode } = payload;
+  line = line.toUpperCase();
 
   const airtableUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
 
