@@ -23,22 +23,33 @@ exports.handler = async function(event) {
     const passIndex = headers.indexOf("password");
     const roleIndex = headers.indexOf("role");
 
-    const user = users.find(row =>
-      row[loginIndex].trim().toLowerCase() === login.toLowerCase() &&
-      row[passIndex].trim() === password
-    );
+    // Vérifie si le login existe
+    const userRow = users.find(row => row[loginIndex].trim().toLowerCase() === login.toLowerCase());
 
-    if (user) {
+    if (!userRow) {
       return {
         statusCode: 200,
-        body: JSON.stringify({ valid: true, role: user[roleIndex] })
-      };
-    } else {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ valid: false })
+        body: JSON.stringify({ valid: false, reason: "not-found" })
       };
     }
+
+    // Vérifie si le mot de passe est correct
+    if (userRow[passIndex].trim() !== password) {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ valid: false, reason: "wrong-password" })
+      };
+    }
+
+    // OK
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        valid: true,
+        role: userRow[roleIndex]
+      })
+    };
+
   } catch (error) {
     console.error("Erreur lecture login.csv :", error);
     return {
