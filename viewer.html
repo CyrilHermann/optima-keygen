@@ -3,100 +3,154 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Télécharger Log - OPTIMA</title>
+  <title>OPTIMA – Admin Log</title>
   <style>
     body {
       background-color: #f0f0f0;
       font-family: sans-serif;
-      padding: 2rem;
       display: flex;
       justify-content: center;
+      padding: 2rem;
     }
     .wrapper {
       background: #e0e0e0;
       padding: 2rem;
       border-radius: 20px;
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
     }
-    h1 {
-      font-family: Optima, sans-serif;
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
+    h1 { text-align: center; font-family: Optima, sans-serif; margin-bottom: 1.2rem; }
+    .form-group { display: flex; flex-direction: column; gap: .8rem; margin-bottom: 1rem; }
     input[type="text"], input[type="password"] {
-      padding: 0.8rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
+      padding: .8rem; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;
     }
     button {
-      background-color: #007bff;
-      color: white;
-      padding: 0.8rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
+      width: 100%; padding: .8rem; background-color: #007bff; color: white;
+      border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;
     }
+    .hidden { display: none !important; }
+    input.error { border: 2px solid red !important; }
+    #status { margin-top: .5rem; color: #c00; min-height: 1.2em; white-space: pre-line; }
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <h1><strong>OPTIMA - Admin Log</strong></h1>
+    <h1><strong>OPTIMA – Admin</strong></h1>
+
     <div class="form-group">
       <input type="text" id="login" placeholder="Login" />
       <input type="password" id="password" placeholder="Mot de passe" />
-      <button onclick="verifyAdmin()">Vérifier</button>
+      <button type="button" onclick="verifyAdmin()">Se connecter</button>
+      <div id="status"></div>
     </div>
-    <div class="form-group hidden" id="download-section">
-      <button onclick="downloadLog()">📥 Télécharger le log</button>
+
+    <!-- Bouton caché tant que l'admin n'est pas validé -->
+    <div id="download-section" class="hidden">
+      <button type="button" onclick="downloadLog()">📥 Télécharger le log</button>
     </div>
-    <div id="status"></div>
   </div>
 
   <script>
     async function verifyAdmin() {
-  const login = document.getElementById("login").value.trim().toLowerCase();
-  const password = document.getElementById("password").value.trim();
+      const loginEl = document.getElementById("login");
+      const passEl  = document.getElementById("password");
+      const status  = document.getElementById("status");
+      const section = document.getElementById("download-section");
 
-  try {
-    const res = await fetch("/.netlify/functions/check-login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ login, password })
-    });
+      // reset styles
+      [loginEl, passEl].forEach(el => el.classList.remove('error'));
+      status.textContent = "";
 
-    let data;
-    try {
-      data = await res.json();
-    } catch (e) {
-      alert("Erreur de réponse du serveur");
-      return;
+      const login = loginEl.value.trim().toLowerCase();
+      const password = passEl.value.trim();
+
+      if (!login || !password) {
+        if (!login) loginEl.classList.add('error');
+        if (!password) passEl.classList.add('error');
+        status.textContent = "Veuillez renseigner login et mot de passe.";
+        return;
+      }
+
+      // Vérifie les identifiants et récupère le rôle
+      let data;
+      try {
+        const res = await fetch("/.netlify/functions/check-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ login, password })
+        });
+        data = await res.json();
+      } catch {
+        status.textContent = "Erreur de réponse du serveur.";
+        return;
+      }
+
+      // Cas attendus: { valid: true, role: "admin" } ou { valid: false, reason: "..." }
+      if (data && data.valid === true && String(data.role || "").toLowerCase() === "admin") {
+        // On mémorise pour downloadLog (POST vers get-log)
+        sessionStorage.setItem("ok_login", login);
+        sessionStorage.setItem("ok_password", password);
+        section.classList.remove("hidden");
+        status.textContent = "";
+      } else {
+        section.classList.add("hidden");
+        // messages fins selon "reason" si fourni par la function
+        if (data && data.reason === "not-found") {
+          loginEl.classList.add('error');
+          status.textContent =
+            "Identifiant inconnu.\n" +
+            "Soit vous avez fait une erreur lors de l'insertion de votre identifiant ou vous n'avez pas d'identifiant pour générer un code 5.\n" +
+            "Veuillez contacter votre TL ou le spécialiste Technologie pour en faire la demande.";
+        } else if (data && data.reason === "wrong-password") {
+          passEl.classList.add('error');
+          status.textContent = "Mot de passe incorrect.";
+        } else if (data && data.valid === true) {
+          // Login OK mais pas admin
+          status.textContent = "Accès refusé : rôle insuffisant.";
+        } else {
+          // Fallback générique
+          loginEl.classList.add('error');
+          passEl.classList.add('error');
+          status.textContent = "Accès refusé.";
+        }
+      }
     }
 
-    if (data.valid && data.role === "admin") {
-      document.getElementById("download-section").classList.remove("hidden");
-      document.getElementById("status").innerText = "";
-    } else {
-      alert("Accès refusé : identifiants ou rôle insuffisant");
-    }
+    async function downloadLog() {
+      const login = sessionStorage.getItem("ok_login");
+      const password = sessionStorage.getItem("ok_password");
+      if (!login || !password) {
+        alert("Session expirée. Veuillez vous reconnecter.");
+        location.reload();
+        return;
+      }
 
-  } catch (error) {
-    alert("Erreur de connexion au serveur");
-    console.error(error);
-  }
-}
+      // Appel POST protégé côté serveur (get-log vérifie rôle admin)
+      const res = await fetch("/.netlify/functions/get-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login, password })
+      });
 
-    function downloadLog() {
-      window.location.href = "/.netlify/functions/get-log";
+      if (!res.ok) {
+        try {
+          const err = await res.json();
+          alert("Téléchargement refusé : " + (err.error || res.statusText));
+        } catch {
+          alert("Téléchargement refusé.");
+        }
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "log.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     }
   </script>
 </body>
